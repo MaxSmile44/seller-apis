@@ -12,7 +12,7 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(last_id, client_id, seller_token):
-    """Получить список товаров магазина Озон в виде списка словарей."""
+    """Получить список товаров магазина Озон в виде словаря."""
     url = "https://api-seller.ozon.ru/v2/product/list"
     headers = {
         "Client-Id": client_id,
@@ -205,7 +205,7 @@ async def upload_stocks(watch_remnants, client_id, seller_token):
 
 
 def main():
-    """Создать список актуального количества товара и цен из Casio, добавить Озон в синхронном режиме."""
+    """Создать список актуального количества товара и цен из Casio, добавить в Озон в синхронном режиме."""
     env = Env()
     seller_token = env.str("SELLER_TOKEN")
     client_id = env.str("CLIENT_ID")

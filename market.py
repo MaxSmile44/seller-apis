@@ -11,6 +11,7 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(page, campaign_id, access_token):
+    """Получить список товаров Яндекс маркета в виде словаря."""
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -30,6 +31,21 @@ def get_product_list(page, campaign_id, access_token):
 
 
 def update_stocks(stocks, campaign_id, access_token):
+    """Обновить остатки товаров Яндекс маркете.
+
+    На входе получить список словарей.
+    Словари имеют конструкцию вида:  {
+                    "sku": "25",
+                    "warehouseId": warehouse_id,
+                    "items": [
+                        {
+                            "count": 4,
+                            "type": "FIT",
+                            "updatedAt": "2025-01-30T11:34:34+00:00Z",
+                        }
+                    ],
+                }.
+    Функция create_stocks создает такой список."""
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -46,6 +62,17 @@ def update_stocks(stocks, campaign_id, access_token):
 
 
 def update_price(prices, campaign_id, access_token):
+    """Обновить цены товаров в Яндекс маркете.
+
+    На входе получить список словарей.
+    Словари имеют конструкцию вида: {
+                "id": str(watch.get("Код")),
+                "price": {
+                    "value": 5990,
+                    "currencyId": "RUR",
+                },
+            }.
+    Функция create_prices создает такой список."""
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -62,7 +89,7 @@ def update_price(prices, campaign_id, access_token):
 
 
 def get_offer_ids(campaign_id, market_token):
-    """Получить артикулы товаров Яндекс маркета"""
+    """Получить артикулы товаров Яндекс маркета в виде списка."""
     page = ""
     product_list = []
     while True:
@@ -78,6 +105,24 @@ def get_offer_ids(campaign_id, market_token):
 
 
 def create_stocks(watch_remnants, offer_ids, warehouse_id):
+    """Создать список актуального количества товара для Яндекс маркета.
+
+    Данный вернуть в виде списка словарей.
+    Словари имеют конструкцию вида: {
+                    "sku": "25",
+                    "warehouseId": warehouse_id,
+                    "items": [
+                        {
+                            "count": 4,
+                            "type": "FIT",
+                            "updatedAt": "2025-01-30T11:34:34+00:00Z",
+                        }
+                    ],
+                }.
+    На входе получить список словарей с данными об остатках товара из магазина Casio.
+    Данный список формирует функция download_stock из модуля seller(файл ./seller.py).
+    На входе получить список id товаров из Яндекс маркета.
+    Данный список формирует функция get_offer_ids."""
     # Уберем то, что не загружено в market
     stocks = list()
     date = str(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z")
@@ -123,6 +168,20 @@ def create_stocks(watch_remnants, offer_ids, warehouse_id):
 
 
 def create_prices(watch_remnants, offer_ids):
+    """Создать список актуальных цен товара для Яндекс маркета.
+
+    Данный вернуть в виде списка словарей.
+    Словари имеют конструкцию вида: {
+                "id": str(watch.get("Код")),
+                "price": {
+                    "value": 5990,
+                    "currencyId": "RUR",
+                },
+            }
+    На входе получить список словарей с данными об остатках товара из магазина Casio.
+    Данный список формирует функция download_stock из модуля seller(файл ./seller.py).
+    На входе получить список id товаров из Яндекс маркета.
+    Данный список формирует функция get_offer_ids."""
     prices = []
     for watch in watch_remnants:
         if str(watch.get("Код")) in offer_ids:
@@ -143,6 +202,10 @@ def create_prices(watch_remnants, offer_ids):
 
 
 async def upload_prices(watch_remnants, campaign_id, market_token):
+    """Создать список актуальных цен и добавить в Яндекс маркете в асихронном режиме.
+
+    На входе получить список словарей с данными об остатках товара из магазина Casio.
+    Данный список формирует функция download_stock из модуля seller(файл ./seller.py)."""
     offer_ids = get_offer_ids(campaign_id, market_token)
     prices = create_prices(watch_remnants, offer_ids)
     for some_prices in list(divide(prices, 500)):
@@ -151,6 +214,10 @@ async def upload_prices(watch_remnants, campaign_id, market_token):
 
 
 async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id):
+    """Создать список актуального количества товара и добавить в Яндекс маркете в асихронном режиме.
+
+    На входе получить список словарей с данными об остатках товара из магазина Casio.
+    Данный список формирует функция download_stock из модуля seller(файл ./seller.py)."""
     offer_ids = get_offer_ids(campaign_id, market_token)
     stocks = create_stocks(watch_remnants, offer_ids, warehouse_id)
     for some_stock in list(divide(stocks, 2000)):
@@ -162,6 +229,11 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
 
 
 def main():
+    """Создать список актуального количества товара и цен из Casio, добавить в Яндекс маркет.
+
+    В модели сотрудничества FBS и DBS:
+    - данные по количеству товара обновляются в синхронном режиме
+    - данные по ценам товара обновляются в асинхронном режиме."""
     env = Env()
     market_token = env.str("MARKET_TOKEN")
     campaign_fbs_id = env.str("FBS_ID")
