@@ -12,7 +12,14 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(last_id, client_id, seller_token):
-    """Получить список товаров магазина Озон в виде словаря."""
+    """Получить список товаров магазина Озон.
+
+    :params str last_id: id последнего товара в получаемом списке товаров
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: Список товаров магазина Озон
+    :rtype: dict
+    """
     url = "https://api-seller.ozon.ru/v2/product/list"
     headers = {
         "Client-Id": client_id,
@@ -32,7 +39,13 @@ def get_product_list(last_id, client_id, seller_token):
 
 
 def get_offer_ids(client_id, seller_token):
-    """Получить артикулы товаров магазина Озон в виде списка."""
+    """Получить артикулы товаров магазина Озон.
+
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: Список id товаров магазина Озон
+    :rtype: list
+    """
     last_id = ""
     product_list = []
     while True:
@@ -51,15 +64,11 @@ def get_offer_ids(client_id, seller_token):
 def update_price(prices: list, client_id, seller_token):
     """Обновить цены товаров в магазине Озон.
 
-    На входе получить список словарей.
-    Словари имеют конструкцию вида: {
-                        "auto_action_enabled": "UNKNOWN",
-                        "currency_code": "RUB",
-                        "offer_id": "25",
-                        "old_price": "0",
-                        "price": "5990",
-    }.
-    Функция create_prices создает такой список."""
+    :param list prices: Список словарей с ценами товаров в Casio
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: В магазине Озон обновляются цены
+    """
     url = "https://api-seller.ozon.ru/v1/product/import/prices"
     headers = {
         "Client-Id": client_id,
@@ -72,11 +81,13 @@ def update_price(prices: list, client_id, seller_token):
 
 
 def update_stocks(stocks: list, client_id, seller_token):
-    """Обновить остатки товаров в магазине Озон.
+    """Обновить остатки товара в магазине Озон.
 
-    На входе получить список словарей.
-    Словари имеют конструкцию вида: {"offer_id": "25", "stock": 34}.
-    Функция create_stocks создает такой список."""
+    :param list stocks: Список словарей с остатками товара в Casio
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: В магазине Озон обновляются остатки товара
+    """
     url = "https://api-seller.ozon.ru/v1/product/import/stocks"
     headers = {
         "Client-Id": client_id,
@@ -91,7 +102,9 @@ def update_stocks(stocks: list, client_id, seller_token):
 def download_stock():
     """Скачать файл ostatki с сайта Casio.
 
-    Вернуть список словарей с данными."""
+    :return: Список остатков товара магазина Casio
+    :rtype: dict
+    """
     # Скачать остатки с сайта
     casio_url = "https://timeworld.ru/upload/files/ostatki.zip"
     session = requests.Session()
@@ -112,14 +125,13 @@ def download_stock():
 
 
 def create_stocks(watch_remnants, offer_ids):
-    """Создать список актуального количества товара для магазина Озон.
+    """Создать список остатков товара магазина Озон.
 
-    Данный вернуть в виде списка словарей.
-    Словари имеют конструкцию вида: {"offer_id": "25", "stock": 4}.
-    На входе получить список словарей с данными об остатках товара из магазина Casio.
-    Данный список формирует функция download_stock.
-    На входе получить список id товаров из магазина Озон.
-    Данный список формирует функция get_offer_ids."""
+    :param list watch_remnants: Список словарей с данными о товарах в Casio
+    :param list offer_ids: Список id товаров магазина Озон
+    :return: Список словарей с остатками товара в Озон
+    :rtype: list
+    """
     # Уберем то, что не загружено в seller
     stocks = []
     for watch in watch_remnants:
@@ -142,18 +154,11 @@ def create_stocks(watch_remnants, offer_ids):
 def create_prices(watch_remnants, offer_ids):
     """Создать список актуальных цен товара для магазина Озон.
 
-    Данный вернуть в виде списка словарей.
-    Словари имеют конструкцию вида: {
-                        "auto_action_enabled": "UNKNOWN",
-                        "currency_code": "RUB",
-                        "offer_id": "25",
-                        "old_price": "0",
-                        "price": "5990",
-    }.
-    На входе получить список словарей с данными об остатках товара из магазина Casio.
-    Данный список формирует функция download_stock.
-    На входе получить список id товаров из магазина Озон.
-    Данный список формирует функция get_offer_ids."""
+    :param list watch_remnants: Список словарей с данными о товарах в Casio
+    :param list offer_ids: Список id товаров магазина Озон
+    :return: Список словарей с ценами товаров в Озон
+    :rtype: list
+    """
     prices = []
     for watch in watch_remnants:
         if str(watch.get("Код")) in offer_ids:
@@ -169,7 +174,17 @@ def create_prices(watch_remnants, offer_ids):
 
 
 def price_conversion(price: str) -> str:
-    """Преобразовать цену. Пример: 5'990.00 руб. -> 5990."""
+    """Преобразовать цену.
+
+    :param str price: Цена
+    :return: Цена в преобразованном виде
+    :rtype: str
+
+    :example:
+
+    >>> price="5'990.00 руб."
+    5990
+    """
     return re.sub("[^0-9]", "", price.split(".")[0])
 
 
@@ -180,10 +195,13 @@ def divide(lst: list, n: int):
 
 
 async def upload_prices(watch_remnants, client_id, seller_token):
-    """Создать список актуальных цен и добавить в магазин Озон в асихронном режиме.
+    """Обновить цены товаров в магазине Озон в асихронном режиме.
 
-    На входе получить список словарей с данными об остатках товара из магазина Casio.
-    Данный список формирует функция download_stock."""
+    :param list watch_remnants: Список словарей с данными о товарах в Casio
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: В магазине Озон обновляются цены товаров
+    """
     offer_ids = get_offer_ids(client_id, seller_token)
     prices = create_prices(watch_remnants, offer_ids)
     for some_price in list(divide(prices, 1000)):
@@ -192,10 +210,13 @@ async def upload_prices(watch_remnants, client_id, seller_token):
 
 
 async def upload_stocks(watch_remnants, client_id, seller_token):
-    """Создать список актуального количества товара и добавить в магазин Озон в асихронном режиме.
+    """Обновить остатки товара в магазине Озон в асихронном режиме.
 
-    На входе получить список словарей с данными об остатках товара из магазина Casio.
-    Данный список формирует функция download_stock."""
+    :param list watch_remnants: Список словарей с данными о товарах в Casio
+    :params str client_id: id магазина
+    :params str seller_token: токен Озона
+    :return: В магазине Озон обновляются остатки товара
+    """
     offer_ids = get_offer_ids(client_id, seller_token)
     stocks = create_stocks(watch_remnants, offer_ids)
     for some_stock in list(divide(stocks, 100)):
@@ -205,7 +226,6 @@ async def upload_stocks(watch_remnants, client_id, seller_token):
 
 
 def main():
-    """Создать список актуального количества товара и цен из Casio, добавить в Озон в синхронном режиме."""
     env = Env()
     seller_token = env.str("SELLER_TOKEN")
     client_id = env.str("CLIENT_ID")
